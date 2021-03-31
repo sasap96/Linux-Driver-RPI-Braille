@@ -446,46 +446,45 @@ static long ms;
 static char letter;
 static int counter=0;
 static enum hrtimer_restart blink_timer_callback(struct hrtimer *param)
-{
+{	
+    	static char power = 0x1;
 
-	
-    static char power = 0x1;
-
-	if(counter==1)
+	if(counter == 1)
 	{
-		kt = ktime_set(TIMER_SEC,TIMER_NANO_SEC);
-		counter=0;
-		power=0x0;
-		ClearGpioPin(GPIO_06);
+	    kt = ktime_set(TIMER_SEC,TIMER_NANO_SEC);
+	    counter=0;
+	    power=0x0;
+	    ClearGpioPin(GPIO_06);
 	    ClearGpioPin(GPIO_07);
 	    ClearGpioPin(GPIO_08);
 	    ClearGpioPin(GPIO_09);
 	    ClearGpioPin(GPIO_10);
 	    ClearGpioPin(GPIO_11);
-		hrtimer_forward(&blink_timer, ktime_get(), kt);
-    	return HRTIMER_RESTART;
+	    hrtimer_forward(&blink_timer, ktime_get(), kt);
+	    
+	    return HRTIMER_RESTART;
 	}
 	else
 	{
-        power ^= 0x1;
+		power ^= 0x1;
 
-        if (power)
-        {
-		    setPins(letter);
-	    }
-        else
-	    {
-	        ClearGpioPin(GPIO_06);
-	        ClearGpioPin(GPIO_07);
-	        ClearGpioPin(GPIO_08);
-	        ClearGpioPin(GPIO_09);
-	        ClearGpioPin(GPIO_10);
-	        ClearGpioPin(GPIO_11);
-        }
+		if (power)
+		{
+			setPins(letter);
+		}
+		else
+		{
+			ClearGpioPin(GPIO_06);
+			ClearGpioPin(GPIO_07);
+			ClearGpioPin(GPIO_08);
+			ClearGpioPin(GPIO_09);
+			ClearGpioPin(GPIO_10);
+			ClearGpioPin(GPIO_11);
+		}
 
-	    
-        hrtimer_forward(&blink_timer, ktime_get(), kt);
-        return HRTIMER_RESTART;
+
+		hrtimer_forward(&blink_timer, ktime_get(), kt);
+		return HRTIMER_RESTART;
 	}
 	
 }
@@ -494,26 +493,25 @@ static enum hrtimer_restart change_timer_callback(struct hrtimer *param)
 {
 	hrtimer_cancel(&blink_timer);
 	if(buffer.counter>0)
-    {
-	    letter=ringBufGetChar(&buffer);
-	    setPins(letter);
-        buffer.counter--;
-	    counter=1;
-	    kt = ktime_set(seconds,ms);
-	    hrtimer_start(&blink_timer, kt, HRTIMER_MODE_REL);
+    	{
+	    	letter=ringBufGetChar(&buffer);
+	    	setPins(letter);
+        	buffer.counter--;
+	    	counter=1;
+	    	kt = ktime_set(seconds,ms);
+	    	hrtimer_start(&blink_timer, kt, HRTIMER_MODE_REL);
 	}
-    hrtimer_forward(&change_timer, ktime_get(), kt1);
+    	hrtimer_forward(&change_timer, ktime_get(), kt1);
 	return HRTIMER_RESTART;
 }
 /* interrupt handler called when falling edge on PB0 (GPIO_03) occurs;
    read the level from SW0 (GPIO_12) */
 static irqreturn_t h_irq_gpio3(int irq, void *data)
 {
-   	  printk("Lampica prisilno ugasena\n");
-      hrtimer_cancel(&change_timer);
-	  hrtimer_start(&change_timer,restart,HRTIMER_MODE_REL);
-
-    return IRQ_HANDLED;
+   	printk("Lampica prisilno ugasena\n");
+	hrtimer_cancel(&change_timer);
+	hrtimer_start(&change_timer,restart,HRTIMER_MODE_REL);
+	return IRQ_HANDLED;
 }
 
 /*
@@ -566,11 +564,11 @@ int gpio_driver_init(void)
     /* Initialize GPIO pins. */
     /* LEDS */
     SetGpioPinDirection(GPIO_06, GPIO_DIRECTION_OUT);
-	SetGpioPinDirection(GPIO_07, GPIO_DIRECTION_OUT);
-	SetGpioPinDirection(GPIO_08, GPIO_DIRECTION_OUT);
-	SetGpioPinDirection(GPIO_09, GPIO_DIRECTION_OUT);
-	SetGpioPinDirection(GPIO_10, GPIO_DIRECTION_OUT);
-	SetGpioPinDirection(GPIO_11, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_07, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_08, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_09, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_10, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_11, GPIO_DIRECTION_OUT);
 
     /* PushButtons */
     SetInternalPullUpDown(GPIO_03, PULL_UP);
@@ -578,29 +576,31 @@ int gpio_driver_init(void)
 
     /* Initialize gpio 3 ISR. */
     result = gpio_request_one(GPIO_03, GPIOF_IN, "irq_gpio3");
-	if(result != 0)
+    
+    if(result != 0)
     {
         printk("Error: GPIO request failed!\n");
         goto fail_irq;
     }
+    
     irq_gpio3 = gpio_to_irq(GPIO_03);
-	result = request_irq(irq_gpio3, h_irq_gpio3,
-      IRQF_TRIGGER_FALLING, "irq_gpio3", (void *)(h_irq_gpio3));
-	if(result != 0)
+    result = request_irq(irq_gpio3, h_irq_gpio3,
+    IRQF_TRIGGER_FALLING, "irq_gpio3", (void *)(h_irq_gpio3));
+    if(result != 0)
     {
         printk("Error: ISR not registered!\n");
         goto fail_irq;
     }
-	buffer.counter=0;
-	seconds1=(A+B)/1000;
-	ms1=((A+B)%1000)*1000*1000;
-	seconds=A/1000;
-	ms=(A%1000)*1000*1000;
-	hrtimer_init(&blink_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	restart=ktime_set(0,0);
+    buffer.counter=0; 
+    seconds1=(A+B)/1000;
+    ms1=((A+B)%1000)*1000*1000;
+    seconds=A/1000;
+    ms=(A%1000)*1000*1000;
+    hrtimer_init(&blink_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    restart=ktime_set(0,0);
     kt = ktime_set(seconds, ms);
     blink_timer.function = &blink_timer_callback;
-	hrtimer_init(&change_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    hrtimer_init(&change_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     kt1 = ktime_set(seconds1, ms1);
     change_timer.function = &change_timer_callback;  
 
@@ -644,20 +644,20 @@ void gpio_driver_exit(void)
 
     /* Clear GPIO pins. */
     ClearGpioPin(GPIO_06);
-	ClearGpioPin(GPIO_07);
-	ClearGpioPin(GPIO_08);
-	ClearGpioPin(GPIO_09);
-	ClearGpioPin(GPIO_10);
-	ClearGpioPin(GPIO_11);
-    
+    ClearGpioPin(GPIO_07);
+    ClearGpioPin(GPIO_08);
+    ClearGpioPin(GPIO_09);
+    ClearGpioPin(GPIO_10);
+    ClearGpioPin(GPIO_11);
+
 
     /* Set GPIO pins as inputs and disable pull-ups. */
     SetGpioPinDirection(GPIO_06, GPIO_DIRECTION_IN);
-	SetGpioPinDirection(GPIO_07, GPIO_DIRECTION_IN);
-	SetGpioPinDirection(GPIO_08, GPIO_DIRECTION_IN);
-	SetGpioPinDirection(GPIO_09, GPIO_DIRECTION_IN);
-	SetGpioPinDirection(GPIO_10, GPIO_DIRECTION_IN);
-	SetGpioPinDirection(GPIO_11, GPIO_DIRECTION_IN);
+    SetGpioPinDirection(GPIO_07, GPIO_DIRECTION_IN); 
+    SetGpioPinDirection(GPIO_08, GPIO_DIRECTION_IN);
+    SetGpioPinDirection(GPIO_09, GPIO_DIRECTION_IN);
+    SetGpioPinDirection(GPIO_10, GPIO_DIRECTION_IN);
+    SetGpioPinDirection(GPIO_11, GPIO_DIRECTION_IN);
     
     SetInternalPullUpDown(GPIO_03, PULL_NONE);
 
@@ -680,11 +680,11 @@ void gpio_driver_exit(void)
 /* File open function. */
 static int gpio_driver_open(struct inode *inode, struct file *filp)
 {
-		buffer.tail=0;
-		buffer.head=0;
-		hrtimer_start(&change_timer, kt1, HRTIMER_MODE_REL);
-    
-    return 0;
+	buffer.tail=0;
+	buffer.head=0;
+	hrtimer_start(&change_timer, kt1, HRTIMER_MODE_REL);
+
+        return 0;
 }
 
 /* File close function. */
@@ -694,11 +694,11 @@ static int gpio_driver_release(struct inode *inode, struct file *filp)
 	{
 		msleep(A+B);
 	}
-		msleep(A+B);
+	msleep(A+B);
 	setPins('#');
 	hrtimer_cancel(&change_timer);
 	hrtimer_cancel(&blink_timer);
-    return 0;
+    	return 0;
 }
 
 /*
@@ -717,9 +717,9 @@ static ssize_t gpio_driver_read(struct file *filp, char *b, size_t len, loff_t *
 {
     	char freeSpace;
        	freeSpace=(char) (RING_SIZE-buffer.counter);
-		if(put_user(freeSpace,b))
+	if(put_user(freeSpace,b))
 		return -EFAULT;
-		return 0;
+	return 0;
 }
 
 /*
@@ -756,181 +756,180 @@ void setPins(char letter)
     {
         case 'A':
         case 'a':
-			SetGpioPin(GPIO_06);
-            break;
+		SetGpioPin(GPIO_06);
+            	break;
         case 'B':
         case 'b':
-			SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_08);
-            
-            break;
+		SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_08);
+            	break;
         case 'C':
         case 'c':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-            break;
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+            	break;
         case 'D':
         case 'd':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_09);
-            break;
-		case 'E':
-		case 'e':
-			SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_09);
-			break;   
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_09);
+            	break;
+	case 'E':
+	case 'e':
+		SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_09);
+		break;   
         case 'F':
         case 'f':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);  
-            break;
-		case 'G':
-		case 'g':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_09);
-            break;
-		case 'H':
-		case 'h':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_09);
-            break;
-		case 'I':
-		case 'i':
-            SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-            break;
-		case 'J':
-		case 'j':
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_09);
-            break;
-		case 'K':
-		case 'k':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'L':
-		case 'l':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'M':
-		case 'm':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'N':
-		case 'n':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_10);
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);  
+            	break;
+	case 'G':
+	case 'g':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_09);
+            	break;
+	case 'H':
+	case 'h':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_09);
+            	break;
+	case 'I':
+	case 'i':
+            	SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+            	break;
+	case 'J':
+	case 'j':
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_09);
+            	break;
+	case 'K':
+	case 'k':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_10);
+            	break;
+	case 'L':
+	case 'l':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_10);
+            	break;
+	case 'M':
+	case 'm':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_10);
+            	break;
+	case 'N':
+	case 'n':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_10);
 		 break;
-		case 'O':
-		case 'o':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'P':
-		case 'p':
-			SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_10);
-			break;
-		case 'Q':
-		case 'q':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'R':
-		case 'r':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'S':
-		case 's':
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'T':
-		case 't':
-            SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_10);
-            break;
-		case 'U':
-		case 'u':
-			SetGpioPin(GPIO_10);
-			SetGpioPin(GPIO_11);
-            break;
-		case 'V':
-		case 'v':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_10);
-			SetGpioPin(GPIO_11);
-            break;
-		case 'W':
-		case 'w':
-            SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_11);
-            break;
-		case 'X':
-		case 'x':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_10);
-			SetGpioPin(GPIO_11);
-            break;
-		case 'Y':
-		case 'y':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_10);
-			SetGpioPin(GPIO_11);
-            break;
-		case 'Z':
-		case 'z':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_10);
-			SetGpioPin(GPIO_11);
-            break;
-		case ',':
-			SetGpioPin(GPIO_11);
-            break;
-		case '.':
-			SetGpioPin(GPIO_11);
-			SetGpioPin(GPIO_07);
-			break;
-		case ' ':
-            SetGpioPin(GPIO_06);
-			SetGpioPin(GPIO_07);
-			SetGpioPin(GPIO_08);
-			SetGpioPin(GPIO_09);
-			SetGpioPin(GPIO_10);
-			SetGpioPin(GPIO_11);
-            break;
+	case 'O':
+	case 'o':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_10);
+            	break;
+	case 'P':
+	case 'p':
+		SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_10);
+		break;
+	case 'Q':
+	case 'q':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_10);
+            	break;
+	case 'R':
+	case 'r':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_10);
+		break;
+	case 'S':
+	case 's':
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_10);
+            	break;
+	case 'T':
+	case 't':
+            	SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_10);
+            	break;
+	case 'U':
+	case 'u':
+		SetGpioPin(GPIO_10);
+		SetGpioPin(GPIO_11);
+            	break;
+	case 'V':
+	case 'v':
+           	 SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_10);
+		SetGpioPin(GPIO_11);
+            	break;
+	case 'W':
+	case 'w':
+            	SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_11);
+            	break;
+	case 'X':
+	case 'x':
+           	 SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_10);
+		SetGpioPin(GPIO_11);
+            	break;
+	case 'Y':
+	case 'y':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_10);
+		SetGpioPin(GPIO_11);
+            	break;
+	case 'Z':
+	case 'z':
+            	SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_10);
+		SetGpioPin(GPIO_11);
+            	break;
+	case ',':
+		SetGpioPin(GPIO_11);
+            	break;
+	case '.':
+		SetGpioPin(GPIO_11);
+		SetGpioPin(GPIO_07);
+		break;
+	case ' ':
+		SetGpioPin(GPIO_06);
+		SetGpioPin(GPIO_07);
+		SetGpioPin(GPIO_08);
+		SetGpioPin(GPIO_09);
+		SetGpioPin(GPIO_10);
+		SetGpioPin(GPIO_11);
+            	break;
 		
     }
 
