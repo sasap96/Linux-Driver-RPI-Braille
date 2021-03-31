@@ -84,39 +84,39 @@ void* reader (void *param)
     	pthread_mutex_lock(&fileLock);
         read(file_desc,&counter,4);
         pthread_mutex_unlock(&fileLock);
-		if(size==0)
-		{
-			break;
-		}    
+	if(size==0)
+	{
+		break;
+	}    
     }
     return 0;
 }
 int main(void)
 {
-	 file_desc = open("/dev/gpio_driver", O_RDWR);
+    file_desc = open("/dev/gpio_driver", O_RDWR);
 
     if(file_desc < 0)
     {
         printf("'/dev/gpio_driver' device isn't open\n");
         printf("Try:\t1) Check does '/dev/gpio_driver' node exist\n\t2)'chmod 666 /dev/ \
                gpio_driver'\n\t3) ""insmod"" gpio_driver module\n");
-				return 0;
+	return 0;
     }
     printf("'/dev/gpio_driver' device is successfully opened!\n");	
 
 
-	pthread_t hWriter;
+    pthread_t hWriter;
     pthread_t hReader;
     pthread_mutex_init(&fileLock,NULL);
     
-	pthread_create(&hReader, NULL, reader, 0);
-	pthread_create(&hWriter, NULL, writer, 0);
+    pthread_create(&hReader, NULL, reader, 0);
+    pthread_create(&hWriter, NULL, writer, 0);
    
 
     /* Cekanje na zavrsetak formiranih niti. */
     pthread_join(hReader, NULL);
     pthread_join(hWriter, NULL);
-	pthread_mutex_destroy(&fileLock);
+    pthread_mutex_destroy(&fileLock);
 	
 	return 0;
 }
