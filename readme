@@ -1,0 +1,3 @@
+Neophodno je bilo napisati drajver koji bi korisnicima omogućavao ispisivanje znakova Brajove azbuke na led diodama koristeći Raspberry Pi 3 i njegove GPIO pinove.
+Korisnicka aplikacija koristi interfejs, koji je implementiran unutar drajvera za prikaz slova konvertovanih u simbole Brajove azbuke pomoću led dioda koje su vezane na GPIO pinove 
+Raspberry Pi 3 računara.
